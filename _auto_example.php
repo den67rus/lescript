@@ -21,7 +21,10 @@ $domains = array('test.example.com', 'example.com');
 $webroot = "/var/www/html";
 $certlocation = "/usr/local/lescript";
 
-require 'Lescript.php';
+require 'src/Lescript.php';
+require 'src/ClientInterface.php';
+require 'src/Client.php';
+require 'src/Base64UrlSafeEncoder.php';
 
 // Always use UTC
 date_default_timezone_set("UTC");
