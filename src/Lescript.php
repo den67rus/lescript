@@ -555,6 +555,8 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment');
 
 	protected function log($message)
     {
+    	if($this->logger === false) return;
+
         if($this->logger) {
             $this->logger->info($message);
         } else {
