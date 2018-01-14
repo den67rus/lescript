@@ -424,17 +424,25 @@ class Lescript
 
 	protected function postNewReg()
     {
-        $this->log('Sending registration to letsencrypt server');
+	    $this->log('Getting last terms of service URL');
 
-        $data = array('resource' => 'new-reg', 'agreement' => $this->license);
-        if(!$this->contact) {
-            $data['contact'] = $this->contact;
-        }
+	    $directory = $this->client->get('/directory');
+	    if (!isset($directory['meta']) || !isset($directory['meta']['terms-of-service'])) {
+		    throw new \RuntimeException("No terms of service link available!");
+	    }
 
-        return $this->signedRequest(
-            '/acme/new-reg',
-            $data
-        );
+	    $data = array('resource' => 'new-reg', 'agreement' => $directory['meta']['terms-of-service']);
+
+	    $this->log('Sending registration to letsencrypt server');
+
+	    if(!$this->contact) {
+		    $data['contact'] = $this->contact;
+	    }
+
+	    return $this->signedRequest(
+		    '/acme/new-reg',
+		    $data
+	    );
     }
 
 	protected function generateCSR($privateKey, array $domains)
