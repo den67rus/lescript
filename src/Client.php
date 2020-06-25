@@ -2,6 +2,8 @@
 
 namespace Analogic\ACME;
 
+use \RuntimeException;
+
 class Client implements ClientInterface
 {
     private $lastCode;
@@ -16,7 +18,7 @@ class Client implements ClientInterface
 
     private function curl($method, $url, $data = null)
     {
-        $headers = array('Accept: application/json', 'Content-Type: application/json');
+        $headers = array('Accept: application/json', 'Content-Type: application/jose+json');
         $handle = curl_init();
         curl_setopt($handle, CURLOPT_URL, preg_match('~^http~', $url) ? $url : $this->base.$url);
         curl_setopt($handle, CURLOPT_HTTPHEADER, $headers);
@@ -38,7 +40,7 @@ class Client implements ClientInterface
         $response = curl_exec($handle);
 
         if(curl_errno($handle)) {
-            throw new \RuntimeException('Curl: '.curl_error($handle));
+            throw new RuntimeException('Curl: '.curl_error($handle));
         }
 
         $header_size = curl_getinfo($handle, CURLINFO_HEADER_SIZE);
@@ -48,6 +50,10 @@ class Client implements ClientInterface
 
         $this->lastHeader = $header;
         $this->lastCode = curl_getinfo($handle, CURLINFO_HTTP_CODE);
+
+        if ($this->lastCode >= 400 && $this->lastCode < 600) {
+            throw new RuntimeException($this->lastCode."\n".$body);
+        }
 
         $data = json_decode($body, true);
         return $data === null ? $body : $data;
@@ -65,12 +71,11 @@ class Client implements ClientInterface
 
     public function getLastNonce()
     {
-        if(preg_match('~Replay\-Nonce: (.+)~i', $this->lastHeader, $matches)) {
+        if(preg_match('~Replay-Nonce: (.+)~i', $this->lastHeader, $matches)) {
             return trim($matches[1]);
         }
 
-        $this->curl('GET', '/directory');
-        return $this->getLastNonce();
+        throw new RuntimeException("We don't have nonce");
     }
 
     public function getLastLocation()
